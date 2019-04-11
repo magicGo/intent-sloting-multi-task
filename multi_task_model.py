@@ -33,8 +33,6 @@ from tensorflow.contrib.rnn import static_bidirectional_rnn
 class MultiTaskModel(object):
     def __init__(self,
                  source_vocab_size,
-                 init_lr,
-                 train_total_size,
                  tag_vocab_size,
                  label_vocab_size,
                  buckets,
@@ -75,7 +73,6 @@ class MultiTaskModel(object):
             single_cell = lambda: tf.nn.rnn_cell.BasicLSTMCell(num_units=self.cell_size)
             if not forward_only and dropout_keep_prob < 1.0:
                 cell = tf.contrib.rnn.MultiRNNCell([single_cell() for _ in range(self.num_layers)])
-                # cell = tf.keras.layers.StackedRNNCells([single_cell() for _ in range(self.num_layers)])
                 cell = DropoutWrapper(cell,
                                       input_keep_prob=dropout_keep_prob,
                                       output_keep_prob=dropout_keep_prob)
@@ -159,27 +156,6 @@ class MultiTaskModel(object):
                 zip(clipped_gradients, params), global_step=self.global_step)
 
         self.saver = tf.train.Saver(tf.global_variables())
-
-
-        # if not forward_only:
-        #     opt = tf.train.AdamOptimizer()
-        #     if task['joint'] == 1:
-        #         # backpropagate the intent and tagging loss, one may further adjust
-        #         # the weights for the two costs.
-        #         gradients = tf.gradients([self.tagging_loss, self.classification_loss],
-        #                                  params)
-        #     elif task['tagging'] == 1:
-        #         gradients = tf.gradients(self.tagging_loss, params)
-        #     elif task['intent'] == 1:
-        #         gradients = tf.gradients(self.classification_loss, params)
-        #
-        #     clipped_gradients, norm = tf.clip_by_global_norm(gradients,
-        #                                                      max_gradient_norm)
-        #     self.gradient_norm = norm
-        #     self.update = opt.apply_gradients(
-        #         zip(clipped_gradients, params), global_step=self.global_step)
-        #
-        # self.saver = tf.train.Saver(tf.global_variables())
 
     def generate_rnn_output(self):
         """

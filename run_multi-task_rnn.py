@@ -37,9 +37,9 @@ import stat
 tf.app.flags.DEFINE_float("learning_rate", 0.1, "Learning rate.")
 # tf.app.flags.DEFINE_float("learning_rate_decay_factor", 0.9,
 #                          "Learning rate decays by this much.")
-tf.app.flags.DEFINE_boolean("do_train", True, "Whether train the model")
+tf.app.flags.DEFINE_boolean("do_train", False, "Whether train the model")
 tf.app.flags.DEFINE_boolean("do_test", False, "Whether train the model")
-tf.app.flags.DEFINE_boolean("do_trans", False, "Whether train the model")
+tf.app.flags.DEFINE_boolean("do_trans", True, "Whether train the model")
 tf.app.flags.DEFINE_boolean("do_loadpb", False, "Whether train the model")
 tf.app.flags.DEFINE_float("max_gradient_norm", 5.0, "Clip gradients to this norm.")
 tf.app.flags.DEFINE_integer("batch_size", 64, "Batch size to use during training.")
@@ -53,7 +53,7 @@ tf.app.flags.DEFINE_integer("steps_per_checkpoint", 100, "How many training step
 tf.app.flags.DEFINE_integer("max_training_steps", 30000, "Max training steps.")
 tf.app.flags.DEFINE_integer("max_test_data_size", 0, "Max size of test set.")
 tf.app.flags.DEFINE_boolean("use_attention", True, "Use attention based RNN")
-tf.app.flags.DEFINE_integer("max_sequence_length", 15, "Max sequence length.")
+tf.app.flags.DEFINE_integer("max_sequence_length", 30, "Max sequence length.")
 tf.app.flags.DEFINE_float("dropout_keep_prob", 0.5, "dropout keep cell input and output prob.")
 tf.app.flags.DEFINE_boolean("bidirectional_rnn", True, "Use birectional RNN")
 tf.app.flags.DEFINE_string("task", "joint", "Options: joint; intent; tagging")
@@ -192,8 +192,6 @@ def read_data(source_path, target_path, label_path, max_size=None):
 
 
 def create_model(session,
-                 init_lr,
-                 train_total_size,
                  source_vocab_size,
                  target_vocab_size,
                  label_vocab_size):
@@ -201,8 +199,6 @@ def create_model(session,
     with tf.variable_scope("model", reuse=None):
         model_train = multi_task_model.MultiTaskModel(
             source_vocab_size,
-            init_lr,
-            train_total_size,
             target_vocab_size,
             label_vocab_size,
             _buckets,
@@ -220,8 +216,6 @@ def create_model(session,
     with tf.variable_scope("model", reuse=True):
         model_test = multi_task_model.MultiTaskModel(
             source_vocab_size,
-            init_lr,
-            train_total_size,
             target_vocab_size,
             label_vocab_size,
             _buckets,
@@ -325,8 +319,6 @@ def train():
         tf.logging.info("Creating %d layers of %d units." % (FLAGS.num_layers, FLAGS.size))
 
         model, model_test = create_model(sess,
-                                         FLAGS.learning_rate,
-                                         train_total_size,
                                          len(vocab),
                                          len(tag_vocab),
                                          len(label_vocab))
@@ -543,7 +535,7 @@ def train():
 
                 if no_improve_step > FLAGS.no_improve_per_step:
                     tf.logging.info("continuous no improve per step " + str(FLAGS.no_improve_per_step) + ", auto stop...")
-                    tf.logging.info("max accuracy is: " + model.best_dev_accuracy + ", max f1 score is: " + model.best_dev_f1)
+                    tf.logging.info("max accuracy is: " + str(model.best_dev_accuracy.eval()) + ", max f1 score is: " + str(model.best_dev_f1.eval()))
                     break
 
 
